@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@microsoft/tsdoc",
+      "comment": "Add an explicit tag contract checker (`TagContractChecker`) that validates where tags appear according to their syntax kind (block, inline, modifier), unifies tag aliases under the canonical tag identity while preserving the original spelling, reports duplicate unique tags separately from unknown tags, ignores tag-like content inside code spans and fenced code, does not execute custom tag handlers, and preserves the original comment ranges in diagnostics. `TSDocTagDefinition` now supports `aliases`.",
+      "type": "minor"
+    }
+  ],
+  "packageName": "@microsoft/tsdoc"
+}

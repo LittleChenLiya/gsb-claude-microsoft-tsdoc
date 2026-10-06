@@ -99,6 +99,10 @@ export class TSDocConfiguration {
   /**
    * Return the tag that was defined with the specified name, or undefined
    * if not found.
+   *
+   * @remarks
+   * If a tag definition declares {@link ITSDocTagDefinitionParameters.aliases}, then an alias
+   * spelling resolves to the same definition object as the canonical tag name.
    */
   public tryGetTagDefinition(tagName: string): TSDocTagDefinition | undefined {
     return this._tagDefinitionsByName.get(tagName.toUpperCase());
@@ -119,6 +123,11 @@ export class TSDocConfiguration {
    * @remarks
    * If a tag is "defined" this means that the parser recognizes it and understands its syntax.
    * Whereas if a tag is "supported", this means it is defined AND the application implements the tag.
+   *
+   * If the definition specifies {@link ITSDocTagDefinitionParameters.aliases}, the alias spellings
+   * are registered as alternate lookups for the same definition object.  Thus an alias shares the
+   * identity of the canonical tag name, while the original spelling is preserved in the parsed
+   * doc nodes.
    */
   public addTagDefinition(tagDefinition: TSDocTagDefinition): void {
     const existingDefinition: TSDocTagDefinition | undefined = this._tagDefinitionsByName.get(
@@ -133,8 +142,23 @@ export class TSDocConfiguration {
       throw new Error(`A tag is already defined using the name ${existingDefinition.tagName}`);
     }
 
+    for (const alias of tagDefinition.aliases) {
+      const collidingDefinition: TSDocTagDefinition | undefined = this._tagDefinitionsByName.get(
+        alias.toUpperCase()
+      );
+      if (collidingDefinition) {
+        throw new Error(
+          `The alias "${alias}" for the tag "${tagDefinition.tagName}" collides with` +
+            ` the existing tag "${collidingDefinition.tagName}"`
+        );
+      }
+    }
+
     this._tagDefinitions.push(tagDefinition);
     this._tagDefinitionsByName.set(tagDefinition.tagNameWithUpperCase, tagDefinition);
+    for (const alias of tagDefinition.aliases) {
+      this._tagDefinitionsByName.set(alias.toUpperCase(), tagDefinition);
+    }
   }
 
   /**

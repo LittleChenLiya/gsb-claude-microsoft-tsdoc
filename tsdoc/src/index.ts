@@ -18,6 +18,11 @@ export { StandardTags } from './details/StandardTags';
 export { Standardization } from './details/Standardization';
 export { StandardModifierTagSet } from './details/StandardModifierTagSet';
 export { ModifierTagSet } from './details/ModifierTagSet';
+export {
+  TagContractChecker,
+  TagContractDiagnosticId,
+  type ITagContractDiagnostic
+} from './details/TagContractChecker';
 
 export { PlainTextEmitter } from './emitters/PlainTextEmitter';
 export { StringBuilder, type IStringBuilder } from './emitters/StringBuilder';

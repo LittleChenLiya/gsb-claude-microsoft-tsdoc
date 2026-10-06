@@ -1015,6 +1015,15 @@ export interface IStringBuilder {
 }
 
 // @public
+export interface ITagContractDiagnostic {
+    readonly canonicalTagName: string | undefined;
+    readonly messageId: TagContractDiagnosticId;
+    readonly messageText: string;
+    readonly tagName: string;
+    readonly textRange: TextRange;
+}
+
+// @public
 export interface ITextLocation {
     // (undocumented)
     column: number;
@@ -1034,6 +1043,7 @@ export interface ITokenSequenceParameters {
 
 // @public
 export interface ITSDocTagDefinitionParameters {
+    aliases?: ReadonlyArray<string>;
     // (undocumented)
     allowMultiple?: boolean;
     // (undocumented)
@@ -1164,6 +1174,22 @@ export class StringBuilder implements IStringBuilder {
     constructor();
     append(text: string): void;
     toString(): string;
+}
+
+// @public
+export class TagContractChecker {
+    constructor(configuration: TSDocConfiguration);
+    check(docComment: DocComment): ITagContractDiagnostic[];
+}
+
+// @public
+export enum TagContractDiagnosticId {
+    BlockTagInInlinePosition = "tsdoc-contract-block-tag-in-inline-position",
+    DuplicateUniqueTag = "tsdoc-contract-duplicate-unique-tag",
+    InlineTagInBlockPosition = "tsdoc-contract-inline-tag-in-block-position",
+    ModifierTagBeforeBlockTag = "tsdoc-contract-modifier-tag-before-block-tag",
+    ModifierTagInInlinePosition = "tsdoc-contract-modifier-tag-in-inline-position",
+    UnknownTag = "tsdoc-contract-unknown-tag"
 }
 
 // @public
@@ -1365,6 +1391,7 @@ export class TSDocParser {
 // @public
 export class TSDocTagDefinition {
     constructor(parameters: ITSDocTagDefinitionParameters);
+    readonly aliases: ReadonlyArray<string>;
     readonly allowMultiple: boolean;
     readonly standardization: Standardization;
     readonly syntaxKind: TSDocTagSyntaxKind;
