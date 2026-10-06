@@ -1,0 +1,15 @@
+{
+  "name": "tsdoc-param-binder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Explicit @param documentation binder: matches doc-comment @param paths against a supplied function signature model, including explicit destructuring paths, without executing the function or running a type checker.",
+  "license": "MIT",
+  "main": "src/binder.js",
+  "scripts": {
+    "example": "node src/examples.js",
+    "test": "node test/binder.test.js"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}
