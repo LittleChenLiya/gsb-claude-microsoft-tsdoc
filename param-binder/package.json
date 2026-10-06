@@ -1,0 +1,12 @@
+{
+  "name": "param-binder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Explicit @param documentation binder: matches a provided signature model against provided DocComment paths without guessing names, executing code, or consulting a type checker.",
+  "main": "src/binder.js",
+  "scripts": {
+    "test": "node --test test/binder.test.js",
+    "demo:ok": "node src/cli.js examples/signature1.json examples/doc1.json",
+    "demo:issues": "node src/cli.js examples/signature2.json examples/doc2.json"
+  }
+}

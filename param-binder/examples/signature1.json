@@ -1,0 +1,29 @@
+{
+  "functionName": "render",
+  "source": { "file": "src/render.ts", "line": 10, "column": 1 },
+  "params": [
+    {
+      "name": "a",
+      "optional": false,
+      "loc": { "file": "src/render.ts", "line": 10, "column": 17 }
+    },
+    {
+      "name": "options",
+      "destructured": true,
+      "loc": { "file": "src/render.ts", "line": 10, "column": 23 },
+      "children": [
+        {
+          "name": "x",
+          "optional": false,
+          "loc": { "file": "src/render.ts", "line": 10, "column": 25 }
+        },
+        {
+          "name": "y",
+          "optional": true,
+          "default": "\"north\" + getDefault()",
+          "loc": { "file": "src/render.ts", "line": 10, "column": 28 }
+        }
+      ]
+    }
+  ]
+}

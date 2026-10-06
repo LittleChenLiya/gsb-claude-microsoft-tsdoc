@@ -1,0 +1,9 @@
+{
+  "params": [
+    { "path": "a", "text": "The first value.", "loc": { "file": "src/configure.ts", "line": 14, "column": 5 } },
+    { "path": "a", "text": "Documented twice by mistake.", "loc": { "file": "src/configure.ts", "line": 15, "column": 5 } },
+    { "path": "options.x", "text": "Horizontal position.", "loc": { "file": "src/configure.ts", "line": 16, "column": 5 } },
+    { "path": "options.y", "text": "Not in the provided model.", "loc": { "file": "src/configure.ts", "line": 17, "column": 5 } },
+    { "path": "flags.verbose", "text": "Child model not provided.", "loc": { "file": "src/configure.ts", "line": 18, "column": 5 } }
+  ]
+}
