@@ -33,6 +33,19 @@ export interface ITSDocTagDefinitionParameters {
   tagName: string;
   syntaxKind: TSDocTagSyntaxKind;
   allowMultiple?: boolean;
+
+  /**
+   * The name of the canonical tag that this tag is an alias for, including the `@` prefix.
+   *
+   * @remarks
+   * An alias shares its identity with the canonical tag for contract checking purposes
+   * (for example, two aliases of the same tag cannot both appear in a doc comment),
+   * but the original spelling of the alias is preserved in the parsed tree and in
+   * diagnostic messages.  If omitted, the tag is its own canonical tag.
+   *
+   * Example: `@experimental` is an alias of `@beta`, so `aliasOf` would be `"@beta"`.
+   */
+  aliasOf?: string;
 }
 
 /**
@@ -75,6 +88,18 @@ export class TSDocTagDefinition {
    */
   public readonly allowMultiple: boolean;
 
+  /**
+   * The canonical tag name in all capitals, which is used for performing
+   * case-insensitive comparisons or lookups that unify aliases.
+   *
+   * @remarks
+   * For most tags this is the same as {@link TSDocTagDefinition.tagNameWithUpperCase}.
+   * For an alias, this is the canonical tag's name, so that an alias and its canonical
+   * tag are treated as the same tag for contract checking while still preserving the
+   * alias's original {@link TSDocTagDefinition.tagName}.
+   */
+  public readonly canonicalTagName: string;
+
   public constructor(parameters: ITSDocTagDefinitionParameters) {
     StringChecks.validateTSDocTagName(parameters.tagName);
     this.tagName = parameters.tagName;
@@ -83,6 +108,20 @@ export class TSDocTagDefinition {
     this.standardization =
       (parameters as ITSDocTagDefinitionInternalParameters).standardization || Standardization.None;
     this.allowMultiple = !!parameters.allowMultiple;
+
+    if (parameters.aliasOf !== undefined) {
+      StringChecks.validateTSDocTagName(parameters.aliasOf);
+      this.canonicalTagName = parameters.aliasOf.toUpperCase();
+    } else {
+      this.canonicalTagName = this.tagNameWithUpperCase;
+    }
+  }
+
+  /**
+   * Returns true if this tag is an alias of another (canonical) tag.
+   */
+  public get isAlias(): boolean {
+    return this.canonicalTagName !== this.tagNameWithUpperCase;
   }
 
   /**

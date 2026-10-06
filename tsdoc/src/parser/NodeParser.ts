@@ -48,6 +48,7 @@ import { type TSDocTagDefinition, TSDocTagSyntaxKind } from '../configuration/TS
 import { StandardTags } from '../details/StandardTags';
 import { PlainTextEmitter } from '../emitters/PlainTextEmitter';
 import { TSDocMessageId } from './TSDocMessageId';
+import { TagContractChecker } from './TagContractChecker';
 
 interface IFailure {
   // (We use "failureMessage" instead of "errorMessage" here so that DocErrorText doesn't
@@ -189,6 +190,13 @@ export class NodeParser {
 
   private _performValidationChecks(): void {
     const docComment: DocComment = this._parserContext.docComment;
+
+    // Perform explicit contract checking for the tag configuration.  This walks the
+    // parsed DocNode tree, so it never re-scans raw input or invokes tag-specific
+    // parsing/transformation logic.
+    const tagContractChecker: TagContractChecker = new TagContractChecker(this._parserContext);
+    tagContractChecker.check();
+
     if (docComment.deprecatedBlock) {
       if (!PlainTextEmitter.hasAnyTextContent(docComment.deprecatedBlock)) {
         this._parserContext.log.addMessageForTokenSequence(
@@ -225,41 +233,22 @@ export class NodeParser {
   private _validateTagDefinition(
     tagDefinition: TSDocTagDefinition | undefined,
     tagName: string,
-    expectingInlineTag: boolean,
     tokenSequenceForErrorContext: TokenSequence,
     nodeForErrorContext: DocNode
   ): void {
+    // The position check (block/inline/modifier) and duplicate detection are performed
+    // by TagContractChecker after the full DocNode tree has been built.  Here we only
+    // handle the configuration-level checks: undefined tags and unsupported tags.
     if (tagDefinition) {
-      const isInlineTag: boolean = tagDefinition.syntaxKind === TSDocTagSyntaxKind.InlineTag;
-
-      if (isInlineTag !== expectingInlineTag) {
-        // The tag is defined, but it is used incorrectly
-        if (expectingInlineTag) {
+      if (this._parserContext.configuration.validation.reportUnsupportedTags) {
+        if (!this._parserContext.configuration.isTagSupported(tagDefinition)) {
+          // The tag is defined, but not supported
           this._parserContext.log.addMessageForTokenSequence(
-            TSDocMessageId.TagShouldNotHaveBraces,
-            `The TSDoc tag "${tagName}" is not an inline tag; it must not be enclosed in "{ }" braces`,
+            TSDocMessageId.UnsupportedTag,
+            `The TSDoc tag "${tagName}" is not supported by this tool`,
             tokenSequenceForErrorContext,
             nodeForErrorContext
           );
-        } else {
-          this._parserContext.log.addMessageForTokenSequence(
-            TSDocMessageId.InlineTagMissingBraces,
-            `The TSDoc tag "${tagName}" is an inline tag; it must be enclosed in "{ }" braces`,
-            tokenSequenceForErrorContext,
-            nodeForErrorContext
-          );
-        }
-      } else {
-        if (this._parserContext.configuration.validation.reportUnsupportedTags) {
-          if (!this._parserContext.configuration.isTagSupported(tagDefinition)) {
-            // The tag is defined, but not supported
-            this._parserContext.log.addMessageForTokenSequence(
-              TSDocMessageId.UnsupportedTag,
-              `The TSDoc tag "${tagName}" is not supported by this tool`,
-              tokenSequenceForErrorContext,
-              nodeForErrorContext
-            );
-          }
         }
       }
     } else {
@@ -307,7 +296,6 @@ export class NodeParser {
     this._validateTagDefinition(
       tagDefinition,
       docBlockTag.tagName,
-      /* expectingInlineTag */ false,
       docBlockTag.getTokenSequence(),
       docBlockTag
     );
@@ -323,6 +311,7 @@ export class NodeParser {
             );
 
             this._parserContext.docComment.params.add(docParamBlock);
+            this._parserContext.docComment._appendBlockTag(docParamBlock);
 
             this._currentSection = docParamBlock.content;
             return;
@@ -334,6 +323,7 @@ export class NodeParser {
             );
 
             this._parserContext.docComment.typeParams.add(docParamBlock);
+            this._parserContext.docComment._appendBlockTag(docParamBlock);
 
             this._currentSection = docParamBlock.content;
             return;
@@ -362,6 +352,10 @@ export class NodeParser {
 
   private _addBlockToDocComment(block: DocBlock): void {
     const docComment: DocComment = this._parserContext.docComment;
+
+    // Track every block tag, including duplicates, so that contract checking can detect
+    // repeated unique tags.  The specialized property below retains the last occurrence.
+    docComment._appendBlockTag(block);
 
     switch (block.blockTag.tagNameWithUpperCase) {
       case StandardTags.remarks.tagNameWithUpperCase:
@@ -967,7 +961,6 @@ export class NodeParser {
     this._validateTagDefinition(
       tagDefinition,
       tagName,
-      /* expectingInlineTag */ true,
       tagNameExcerpt,
       docNode
     );

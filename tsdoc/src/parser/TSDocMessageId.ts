@@ -144,6 +144,11 @@ export enum TSDocMessageId {
   UndefinedTag = 'tsdoc-undefined-tag',
 
   /**
+   * The TSDoc tag ___ may only appear once in a doc comment.
+   */
+  DuplicateTag = 'tsdoc-duplicate-tag',
+
+  /**
    * The `@param` block should not include a JSDoc-style `{type}`.
    */
   ParamTagWithInvalidType = 'tsdoc-param-tag-with-invalid-type',
@@ -443,6 +448,7 @@ export const allTsdocMessageIds: string[] = [
   'tsdoc-tag-should-not-have-braces',
   'tsdoc-unsupported-tag',
   'tsdoc-undefined-tag',
+  'tsdoc-duplicate-tag',
   'tsdoc-param-tag-with-invalid-type',
   'tsdoc-param-tag-with-invalid-optional-name',
   'tsdoc-param-tag-with-invalid-name',

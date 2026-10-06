@@ -100,6 +100,19 @@ export abstract class DocInlineTagBase extends DocNode {
     return this._tagNameWithUpperCase;
   }
 
+  /**
+   * Returns the token sequence corresponding to the tag name (for example, `@link`),
+   * which is used for reporting diagnostics that preserve the original comment range.
+   */
+  public getTokenSequence(): TokenSequence {
+    if (!this._tagNameExcerpt) {
+      throw new Error(
+        'DocInlineTagBase.getTokenSequence() failed because this object did not originate from a parsed input'
+      );
+    }
+    return this._tagNameExcerpt.content;
+  }
+
   /** @override @sealed */
   protected onGetChildNodes(): ReadonlyArray<DocNode | undefined> {
     return [

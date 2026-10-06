@@ -94,6 +94,16 @@ export class DocComment extends DocNode {
   private _customBlocks: DocBlock[];
 
   /**
+   * All block tags that were parsed, including duplicates.
+   *
+   * @remarks
+   * The specialized properties such as {@link DocComment.remarksBlock} only retain a
+   * single block, so this collection is used by contract checking to detect repeated
+   * unique tags.  The first occurrence is also reflected in the specialized property.
+   */
+  private readonly _blockTags: DocBlock[];
+
+  /**
    * Don't call this directly.  Instead use {@link TSDocParser}
    * @internal
    */
@@ -112,6 +122,7 @@ export class DocComment extends DocNode {
 
     this._seeBlocks = [];
     this._customBlocks = [];
+    this._blockTags = [];
   }
 
   /** @override */
@@ -134,6 +145,18 @@ export class DocComment extends DocNode {
   }
 
   /**
+   * All block tags that were parsed, including duplicates.
+   *
+   * @remarks
+   * The specialized properties such as {@link DocComment.remarksBlock} only retain a
+   * single block, so this collection is used by contract checking to detect repeated
+   * unique tags.
+   */
+  public get blockTags(): ReadonlyArray<DocBlock> {
+    return this._blockTags;
+  }
+
+  /**
    * Append an item to the seeBlocks collection.
    * @internal
    */
@@ -146,6 +169,14 @@ export class DocComment extends DocNode {
    */
   public appendCustomBlock(block: DocBlock): void {
     this._customBlocks.push(block);
+  }
+
+  /**
+   * Append a block tag to the {@link DocComment.blockTags} collection.
+   * @internal
+   */
+  public _appendBlockTag(block: DocBlock): void {
+    this._blockTags.push(block);
   }
 
   /** @override */

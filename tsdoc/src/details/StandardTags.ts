@@ -145,11 +145,17 @@ export class StandardTags {
    * Example implementations: Angular API documenter
    *
    * Synonyms: `@beta`
+   *
+   * @privateRemarks
+   * `@experimental` is an alias of `@beta`.  The two names are unified for contract
+   * checking (for example, they cannot both appear in the same doc comment), but the
+   * original spelling is preserved in the parsed tree and in diagnostic messages.
    */
   public static readonly experimental: TSDocTagDefinition = StandardTags._defineTag({
     tagName: '@experimental',
     syntaxKind: TSDocTagSyntaxKind.ModifierTag,
-    standardization: Standardization.Discretionary
+    standardization: Standardization.Discretionary,
+    aliasOf: '@beta'
   });
 
   /**

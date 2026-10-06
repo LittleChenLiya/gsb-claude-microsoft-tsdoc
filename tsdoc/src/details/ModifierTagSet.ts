@@ -60,17 +60,25 @@ export class ModifierTagSet {
   }
 
   /**
-   * Adds a new modifier tag to the set.  If a tag already exists with the same name,
-   * then no change is made, and the return value is false.
+   * Adds a new modifier tag to the set.
+   *
+   * @remarks
+   * Every occurrence is retained in {@link ModifierTagSet.nodes}, even duplicates, so that
+   * contract checking can report repeated modifier tags.  The {@link ModifierTagSet.hasTag}
+   * and {@link ModifierTagSet.tryGetTag} lookups continue to return the first occurrence.
+   *
+   * @returns true if the tag was added; false if a tag with the same name already existed.
    */
   public addTag(blockTag: DocBlockTag): boolean {
-    if (this._nodesByName.has(blockTag.tagNameWithUpperCase)) {
-      return false;
+    const isDuplicate: boolean = this._nodesByName.has(blockTag.tagNameWithUpperCase);
+
+    if (!isDuplicate) {
+      this._nodesByName.set(blockTag.tagNameWithUpperCase, blockTag);
     }
 
-    this._nodesByName.set(blockTag.tagNameWithUpperCase, blockTag);
+    // Always retain the occurrence so that contract checking can see duplicates.
     this._nodes.push(blockTag);
 
-    return true;
+    return !isDuplicate;
   }
 }

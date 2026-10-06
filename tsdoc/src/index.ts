@@ -28,6 +28,7 @@ export * from './nodes';
 export { ParserContext } from './parser/ParserContext';
 export { ParserMessage, type IParserMessageParameters } from './parser/ParserMessage';
 export { ParserMessageLog } from './parser/ParserMessageLog';
+export { TagContractChecker } from './parser/TagContractChecker';
 export { TextRange, type ITextLocation } from './parser/TextRange';
 export { Token, TokenKind } from './parser/Token';
 export { TokenSequence, type ITokenSequenceParameters } from './parser/TokenSequence';
