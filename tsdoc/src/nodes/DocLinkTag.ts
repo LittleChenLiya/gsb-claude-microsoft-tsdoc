@@ -10,6 +10,7 @@ import {
 } from './DocInlineTagBase';
 import { DocExcerpt, ExcerptKind } from './DocExcerpt';
 import type { TokenSequence } from '../parser/TokenSequence';
+import type { TextRange } from '../parser/TextRange';
 
 /**
  * Constructor parameters for {@link DocLinkTag}.
@@ -189,6 +190,89 @@ export class DocLinkTag extends DocInlineTagBase {
       }
     }
     return this._linkText;
+  }
+
+  /**
+   * If the link tag was parsed from a doc comment, this returns the range of characters
+   * in the original input that corresponds to the link destination; otherwise this
+   * property is undefined.
+   *
+   * @remarks
+   * The returned range refers to the original input buffer that was parsed, so it can be used
+   * to highlight or rewrite the link target in the original doc comment.  If the destination
+   * spans multiple comment lines, the range may include characters that were discarded during
+   * comment parsing (for example the `*` delimiter that starts each line), but the range always
+   * starts and ends with a character of the destination itself.
+   *
+   * The range of the optional link text is reported separately by
+   * {@link DocLinkTag.linkTextTextRange}.
+   *
+   * If the link destination cannot be parsed, the parser reports the original diagnostic
+   * messages and produces a generic {@link DocInlineTag} node instead of a `DocLinkTag`,
+   * so a fabricated target range is never returned for a broken link.
+   */
+  public get linkTargetTextRange(): TextRange | undefined {
+    if (this._urlDestinationExcerpt !== undefined) {
+      return this._urlDestinationExcerpt.content.getContainingTextRange();
+    }
+    if (this._codeDestination !== undefined) {
+      return DocLinkTag._getDeclarationReferenceTextRange(this._codeDestination);
+    }
+    return undefined;
+  }
+
+  /**
+   * If the link tag was parsed from a doc comment and includes link text, this returns the
+   * range of characters in the original input that corresponds to the link text; otherwise
+   * this property is undefined.
+   *
+   * @remarks
+   * The returned range refers to the original input buffer that was parsed.  If the link text
+   * spans multiple comment lines, the range may include characters that were discarded during
+   * comment parsing (for example the `*` delimiter that starts each line), but the range always
+   * starts and ends with a character of the link text itself.
+   *
+   * The range of the link destination is reported separately by
+   * {@link DocLinkTag.linkTargetTextRange}.
+   */
+  public get linkTextTextRange(): TextRange | undefined {
+    if (this._linkTextExcerpt !== undefined) {
+      return this._linkTextExcerpt.content.getContainingTextRange();
+    }
+    return undefined;
+  }
+
+  /**
+   * Calculates the original text range spanned by the meaningful (non-spacing) excerpts
+   * of a parsed declaration reference.
+   */
+  private static _getDeclarationReferenceTextRange(
+    declarationReference: DocDeclarationReference
+  ): TextRange | undefined {
+    let textRange: TextRange | undefined = undefined;
+
+    const nodesToVisit: DocNode[] = [declarationReference];
+    while (nodesToVisit.length > 0) {
+      const node: DocNode = nodesToVisit.pop()!;
+      if (node instanceof DocExcerpt) {
+        // Ignore spacing excerpts, so that the range starts and ends with a meaningful character
+        if (node.excerptKind !== ExcerptKind.Spacing && !node.content.isEmpty()) {
+          const excerptRange: TextRange = node.content.getContainingTextRange();
+          if (textRange === undefined) {
+            textRange = excerptRange;
+          } else {
+            textRange = textRange.getNewRange(
+              Math.min(textRange.pos, excerptRange.pos),
+              Math.max(textRange.end, excerptRange.end)
+            );
+          }
+        }
+      } else {
+        nodesToVisit.push(...node.getChildNodes());
+      }
+    }
+
+    return textRange;
   }
 
   /** @override */
