@@ -212,11 +212,13 @@ export class DocLinkTag extends DocInlineTagBase {
     // @internal
     constructor(parameters: IDocLinkTagParameters | IDocLinkTagParsedParameters);
     get codeDestination(): DocDeclarationReference | undefined;
+    get destinationTextRange(): TextRange | undefined;
     // @override (undocumented)
     protected getChildNodesForContent(): ReadonlyArray<DocNode | undefined>;
     // @override (undocumented)
     get kind(): DocNodeKind | string;
     get linkText(): string | undefined;
+    get linkTextTextRange(): TextRange | undefined;
     get urlDestination(): string | undefined;
 }
 

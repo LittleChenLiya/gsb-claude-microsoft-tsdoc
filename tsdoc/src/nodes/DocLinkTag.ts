@@ -9,6 +9,7 @@ import {
   type IDocInlineTagBaseParameters
 } from './DocInlineTagBase';
 import { DocExcerpt, ExcerptKind } from './DocExcerpt';
+import type { TextRange } from '../parser/TextRange';
 import type { TokenSequence } from '../parser/TokenSequence';
 
 /**
@@ -191,6 +192,55 @@ export class DocLinkTag extends DocInlineTagBase {
     return this._linkText;
   }
 
+  /**
+   * If the link tag was parsed from a doc comment, this returns the text range within the
+   * original input corresponding to the link destination; otherwise this property is undefined.
+   *
+   * @remarks
+   * The returned range refers to the original input buffer that was provided to the
+   * {@link TSDocParser}, so it can be used to report errors or to highlight the link
+   * destination in a source file.  For a multi-line declaration reference, the range
+   * spans across the comment lines, including any newline characters and leading `*`
+   * characters that appear between the tokens of the destination.
+   *
+   * This range covers the destination only; the {@link DocLinkTag.linkTextTextRange} property
+   * returns the separate range for the link text.
+   *
+   * If the link tag could not be parsed successfully, the parser reports an error and produces
+   * a generic {@link DocInlineTag} node instead of a `DocLinkTag`, so this property never
+   * reports a destination range for a malformed link.
+   */
+  public get destinationTextRange(): TextRange | undefined {
+    if (this._urlDestinationExcerpt !== undefined) {
+      return this._urlDestinationExcerpt.content.getContainingTextRange();
+    }
+    if (this._codeDestination !== undefined) {
+      return DocLinkTag._getTextRangeForNode(this._codeDestination);
+    }
+    return undefined;
+  }
+
+  /**
+   * If the link tag was parsed from a doc comment and includes link text, this returns the
+   * text range within the original input corresponding to the link text; otherwise this
+   * property is undefined.
+   *
+   * @remarks
+   * The returned range refers to the original input buffer that was provided to the
+   * {@link TSDocParser}.  For link text that spans multiple comment lines, the range
+   * spans across the comment lines, including any newline characters and leading `*`
+   * characters that appear between the tokens of the link text.
+   *
+   * This range covers the link text only; the {@link DocLinkTag.destinationTextRange} property
+   * returns the separate range for the link destination.
+   */
+  public get linkTextTextRange(): TextRange | undefined {
+    if (this._linkTextExcerpt !== undefined) {
+      return this._linkTextExcerpt.content.getContainingTextRange();
+    }
+    return undefined;
+  }
+
   /** @override */
   protected getChildNodesForContent(): ReadonlyArray<DocNode | undefined> {
     // abstract
@@ -203,5 +253,39 @@ export class DocLinkTag extends DocInlineTagBase {
       this._linkTextExcerpt,
       this._spacingAfterLinkTextExcerpt
     ];
+  }
+
+  /**
+   * Calculates the smallest TextRange that contains all the non-spacing DocExcerpt
+   * content in the subtree rooted at the specified node.  Returns undefined if the
+   * subtree contains no excerpts, for example if the node was constructed using
+   * the builder scenario instead of being parsed from an input.
+   */
+  private static _getTextRangeForNode(docNode: DocNode): TextRange | undefined {
+    let textRange: TextRange | undefined = undefined;
+
+    const nodesToVisit: DocNode[] = [docNode];
+    while (nodesToVisit.length > 0) {
+      const currentNode: DocNode = nodesToVisit.pop()!;
+      if (currentNode instanceof DocExcerpt) {
+        if (currentNode.excerptKind !== ExcerptKind.Spacing) {
+          const excerptRange: TextRange = currentNode.content.getContainingTextRange();
+          if (!excerptRange.isEmpty()) {
+            if (textRange === undefined) {
+              textRange = excerptRange;
+            } else {
+              textRange = textRange.getNewRange(
+                Math.min(textRange.pos, excerptRange.pos),
+                Math.max(textRange.end, excerptRange.end)
+              );
+            }
+          }
+        }
+      } else {
+        nodesToVisit.push(...currentNode.getChildNodes());
+      }
+    }
+
+    return textRange;
   }
 }
