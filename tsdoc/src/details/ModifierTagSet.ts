@@ -21,11 +21,49 @@ export class ModifierTagSet {
   // the Turkish "i" character correctly).
   private readonly _nodesByName: Map<string, DocBlockTag> = new Map<string, DocBlockTag>();
 
+  // Every modifier tag node that was added, in the original order in which the tags
+  // were encountered.  Unlike `_nodes`, this list also includes duplicate tags.
+  private readonly _nodesInOrder: DocBlockTag[] = [];
+
+  // The subset of `_nodesInOrder` whose tags were discarded as duplicates of an earlier
+  // tag with the same name.  They are retained (separately from the deduplicated set)
+  // so that diagnostics can report them.
+  private readonly _duplicateNodes: DocBlockTag[] = [];
+
   /**
    * The original block tag nodes that defined the modifiers in this set, excluding duplicates.
    */
   public get nodes(): ReadonlyArray<DocBlockTag> {
     return this._nodes;
+  }
+
+  /**
+   * All of the modifier tag nodes that were added to this set, in the original order
+   * in which they were encountered, including any duplicates.
+   *
+   * @remarks
+   * This is a read-only view of the modifier tags as they appeared in the doc comment;
+   * it does not modify the `DocNode` tree.  Unlike {@link ModifierTagSet.nodes}, repeated
+   * occurrences of the same tag are preserved here, so this list may be longer than
+   * `nodes`.  Only tags that were recognized as modifiers (according to the
+   * `TSDocConfiguration` tag definitions) are included; unrecognized tags are never
+   * treated as modifiers.
+   */
+  public get nodesInOrder(): ReadonlyArray<DocBlockTag> {
+    return this._nodesInOrder;
+  }
+
+  /**
+   * The modifier tag nodes that were discarded because an earlier tag with the same
+   * name was already present in the set.
+   *
+   * @remarks
+   * These nodes are retained separately from the deduplicated set so that a tool can
+   * report diagnostics (for example, a warning that `@internal` was specified twice).
+   * Each item also appears in {@link ModifierTagSet.nodesInOrder}.
+   */
+  public get duplicateNodes(): ReadonlyArray<DocBlockTag> {
+    return this._duplicateNodes;
   }
 
   /**
@@ -61,10 +99,16 @@ export class ModifierTagSet {
 
   /**
    * Adds a new modifier tag to the set.  If a tag already exists with the same name,
-   * then no change is made, and the return value is false.
+   * then the set is not changed, and the return value is false; however the duplicate
+   * node is still recorded in {@link ModifierTagSet.nodesInOrder} and
+   * {@link ModifierTagSet.duplicateNodes} so that the original tag order is preserved
+   * and the duplicate can be reported by diagnostics.
    */
   public addTag(blockTag: DocBlockTag): boolean {
+    this._nodesInOrder.push(blockTag);
+
     if (this._nodesByName.has(blockTag.tagNameWithUpperCase)) {
+      this._duplicateNodes.push(blockTag);
       return false;
     }
 

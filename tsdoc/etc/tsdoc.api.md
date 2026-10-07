@@ -1045,9 +1045,11 @@ export interface ITSDocTagDefinitionParameters {
 // @public
 export class ModifierTagSet {
     addTag(blockTag: DocBlockTag): boolean;
+    get duplicateNodes(): ReadonlyArray<DocBlockTag>;
     hasTag(modifierTagDefinition: TSDocTagDefinition): boolean;
     hasTagName(modifierTagName: string): boolean;
     get nodes(): ReadonlyArray<DocBlockTag>;
+    get nodesInOrder(): ReadonlyArray<DocBlockTag>;
     tryGetTag(modifierTagDefinition: TSDocTagDefinition): DocBlockTag | undefined;
 }
 
