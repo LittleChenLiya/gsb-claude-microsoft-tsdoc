@@ -21,11 +21,47 @@ export class ModifierTagSet {
   // the Turkish "i" character correctly).
   private readonly _nodesByName: Map<string, DocBlockTag> = new Map<string, DocBlockTag>();
 
+  // Every modifier tag occurrence, in the original order in which the tags were added,
+  // including any duplicate occurrences.
+  private readonly _orderedNodes: DocBlockTag[] = [];
+
+  // The subset of `_orderedNodes` that were rejected by `addTag()` as duplicates.
+  // They are retained so that tools can report diagnostics for them.
+  private readonly _duplicateNodes: DocBlockTag[] = [];
+
   /**
    * The original block tag nodes that defined the modifiers in this set, excluding duplicates.
    */
   public get nodes(): ReadonlyArray<DocBlockTag> {
     return this._nodes;
+  }
+
+  /**
+   * All of the modifier tag occurrences in the original order in which they were added,
+   * including any duplicate occurrences.
+   *
+   * @remarks
+   * Unlike {@link ModifierTagSet.nodes}, this view does not discard repeated occurrences
+   * of the same tag, so it can be used to recover the exact sequence of modifier tags
+   * that appeared in the doc comment.  This is a read-only view of the set; it does not
+   * affect the `DocNode` tree, which continues to expose only the deduplicated
+   * {@link ModifierTagSet.nodes}.
+   */
+  public get orderedNodes(): ReadonlyArray<DocBlockTag> {
+    return this._orderedNodes;
+  }
+
+  /**
+   * The modifier tag occurrences that were discarded as duplicates, in their original order.
+   *
+   * @remarks
+   * When a doc comment repeats the same modifier tag (for example `@internal @internal`),
+   * the first occurrence is added to the set, and each subsequent occurrence is retained
+   * in this list so that tools can report diagnostics for the redundant tags.  The
+   * comparison is case-insensitive and does not consider synonyms.
+   */
+  public get duplicateNodes(): ReadonlyArray<DocBlockTag> {
+    return this._duplicateNodes;
   }
 
   /**
@@ -61,10 +97,15 @@ export class ModifierTagSet {
 
   /**
    * Adds a new modifier tag to the set.  If a tag already exists with the same name,
-   * then no change is made, and the return value is false.
+   * then the set is not modified, the duplicate is appended to
+   * {@link ModifierTagSet.duplicateNodes}, and the return value is false.
+   * Either way, the tag is appended to {@link ModifierTagSet.orderedNodes}.
    */
   public addTag(blockTag: DocBlockTag): boolean {
+    this._orderedNodes.push(blockTag);
+
     if (this._nodesByName.has(blockTag.tagNameWithUpperCase)) {
+      this._duplicateNodes.push(blockTag);
       return false;
     }
 

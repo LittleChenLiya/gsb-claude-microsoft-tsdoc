@@ -87,6 +87,13 @@ export class DocComment extends DocNode {
 
   /**
    * The modifier tags for this DocComment.
+   *
+   * @remarks
+   * The set's {@link ModifierTagSet.nodes} collection is deduplicated and is what
+   * appears in the `DocNode` tree.  Use {@link ModifierTagSet.orderedNodes} to read
+   * the modifier tags in their original order (including duplicates), and
+   * {@link ModifierTagSet.duplicateNodes} to inspect repeated occurrences that were
+   * retained for diagnostics.
    */
   public readonly modifierTagSet: StandardModifierTagSet;
 
